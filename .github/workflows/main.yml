@@ -1,0 +1,42 @@
+name: Auto Update Streams
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"   # Every 30 minutes (change if needed)
+  workflow_dispatch:
+
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 📦 Install Requirements
+        run: pip install -r requirements.txt
+
+      - name: ▶️ Run Script
+        env:
+          SECRET_HASH: ${{ secrets.SECRET_HASH }}
+        run: python scraper.py
+
+      - name: 💾 Commit & Push if Changed
+        run: |
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+
+          git add final.json
+
+          # Commit only if there are changes
+          if ! git diff --staged --quiet; then
+            git commit -m "🔄 Auto update final.json"
+            git push
+          else
+            echo "No changes to commit"
+          fi
